@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bewakoof — Brand Health Report · Nivimivi</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #f9f8f6;
+    --surface: #ffffff;
+    --border:  #e8e4de;
+    --text:    #1a1814;
+    --muted:   #8a8578;
+    --accent:  #c17f3e;
+    --pos:     #22c55e;
+    --neg:     #ef4444;
+    --warn:    #f59e0b;
+    --neu:     #94a3b8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; line-height:1.6; }
+
+  /* ── Header ── */
+  .header { background:var(--surface); border-bottom:1px solid var(--border); padding:28px 48px; display:flex; justify-content:space-between; align-items:flex-end; }
+  .header-left { display:flex; flex-direction:column; gap:4px; }
+  .logo { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--accent); font-weight:600; }
+  .brand-name { font-family:'DM Serif Display',serif; font-size:32px; line-height:1; }
+  .header-meta { font-size:12px; color:var(--muted); }
+  .header-right { display:flex; align-items:center; gap:24px; }
+  .health-score { font-family:'DM Serif Display',serif; font-size:52px; color:#ef4444; line-height:1; white-space:nowrap; }
+  .health-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+  .health-wrap { text-align:right; }
+
+  /* ── Delta row ── */
+  .delta-row { background:#fffdf9; border-bottom:1px solid var(--border); padding:10px 48px; display:flex; gap:24px; align-items:center; font-size:12px; flex-wrap:wrap; }
+  .delta-row-label { color:var(--muted); font-size:10px; letter-spacing:2px; text-transform:uppercase; margin-right:8px; }
+  .delta-item { display:flex; align-items:center; gap:6px; }
+  .delta-item-name { color:var(--muted); }
+  .delta-badge { font-weight:600; font-size:12px; }
+  .card-delta { font-size:11px; margin-top:6px; font-weight:600; }
+
+  /* ── Action Plan Button ── */
+  .ap-btn { background:var(--text); color:#fff; border:none; border-radius:8px; padding:12px 20px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; white-space:nowrap; transition:opacity 0.2s; }
+  .ap-btn:hover { opacity:0.85; }
+
+  /* ── Action Plan Panel ── */
+  .ap-panel { background:#fffdf9; border-bottom:2px solid var(--accent); padding:0 48px; max-height:0; overflow:hidden; transition:max-height 0.5s ease, padding 0.3s ease; }
+  .ap-panel.open { max-height:800px; padding:32px 48px; }
+  .ap-grid { display:grid; grid-template-columns:1fr 1.6fr 1fr; gap:24px; }
+  .ap-section-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:12px; }
+  .ap-pain-cat { font-family:'DM Serif Display',serif; font-size:22px; margin-bottom:6px; }
+  .ap-pain-why { font-size:13px; color:#4a4540; line-height:1.6; margin-bottom:10px; }
+  .ap-pain-impact { font-size:12px; color:var(--muted); font-style:italic; }
+  .ap-urgency { display:inline-block; font-size:10px; font-weight:700; letter-spacing:1px; padding:3px 10px; border-radius:4px; margin-bottom:10px; color:#ef4444; background:#ef444415; border:1px solid #ef444430; }
+  .ap-action { display:flex; gap:12px; margin-bottom:16px; }
+  .ap-action-num { width:24px; height:24px; border-radius:50%; background:var(--text); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+  .ap-action-title { font-size:13px; font-weight:600; margin-bottom:4px; }
+  .ap-action-detail { font-size:12px; color:#4a4540; line-height:1.5; margin-bottom:6px; }
+  .ap-action-tags { display:flex; gap:6px; }
+  .ap-tag { font-size:10px; padding:2px 8px; border-radius:4px; border:1px solid; font-weight:500; }
+  .ap-pri-review { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--neg); border-radius:0 6px 6px 0; padding:10px 12px; margin-bottom:10px; }
+  .ap-pri-cat { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-bottom:4px; font-weight:600; }
+  .ap-pri-text { font-size:12px; font-style:italic; color:#3a3630; margin-bottom:4px; }
+  .ap-pri-why { font-size:11px; color:var(--muted); }
+
+  /* ── Body ── */
+  .body { padding:32px 48px; max-width:1280px; margin:0 auto; }
+  .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-bottom:24px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:20px; animation:fadeUp 0.4s ease both; }
+  .card-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; font-weight:600; }
+  .card-value { font-family:'DM Serif Display',serif; font-size:36px; line-height:1; }
+  .card-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+  .stat-pos { border-top:3px solid var(--pos); }
+  .stat-neg { border-top:3px solid var(--neg); }
+  .stat-neu { border-top:3px solid var(--neu); }
+  .stat-mix { border-top:3px solid var(--warn); }
+  .section-title { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+  .cat-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .cat-label { width:160px; font-size:12px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cat-track { flex:1; height:6px; background:#f0ede8; border-radius:3px; overflow:hidden; }
+  .cat-bar { height:100%; background:var(--accent); border-radius:3px; transition:width 0.6s ease; }
+  .cat-count { width:40px; text-align:right; font-size:12px; color:var(--muted); flex-shrink:0; }
+  .donut-wrap { display:flex; gap:24px; align-items:center; }
+  .donut-legend { display:flex; flex-direction:column; gap:8px; }
+  .legend-item { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .legend-val { color:var(--muted); margin-left:auto; padding-left:12px; }
+  .heatmap-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .heatmap-table th { padding:6px 8px; text-align:center; font-weight:500; color:var(--muted); border-bottom:1px solid var(--border); }
+  .heatmap-table td { padding:5px 8px; text-align:center; border-bottom:1px solid #f5f2ee; }
+  .heatmap-table td.cat-td { text-align:left; font-size:11px; white-space:nowrap; }
+  .hm-cell { display:inline-block; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:500; }
+  .review-filters { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .filter-btn { padding:5px 14px; border-radius:20px; border:1px solid var(--border); background:var(--surface); font-size:11px; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--muted); transition:all 0.2s; }
+  .filter-btn.active, .filter-btn:hover { background:var(--text); color:#fff; border-color:var(--text); }
+  .review-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  .review-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px; }
+  .review-card.hidden { display:none; }
+  .review-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .review-cat { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:600; }
+  .review-source { font-size:10px; color:var(--muted); }
+  .review-text { font-size:12px; line-height:1.6; color:#3a3630; margin-bottom:8px; }
+  .review-evidence { font-size:11px; color:var(--neg); font-style:italic; border-left:2px solid var(--neg); padding-left:8px; }
+  .review-meta { display:flex; gap:8px; margin-top:10px; }
+  .sent-badge { font-size:9px; padding:2px 8px; border-radius:10px; font-weight:600; letter-spacing:0.5px; }
+  .sent-Negative { background:#fef2f2; color:var(--neg); }
+  .sent-Mixed    { background:#fffbeb; color:var(--warn); }
+  .sent-Positive { background:#f0fdf4; color:var(--pos); }
+  .sent-Neutral  { background:#f8fafc; color:var(--neu); }
+  .lang-badge { font-size:9px; padding:2px 8px; border-radius:10px; background:#f5f2ee; color:var(--muted); }
+  .pill-row { display:flex; gap:10px; flex-wrap:wrap; }
+  .pill { background:#f5f2ee; border-radius:6px; padding:10px 16px; display:flex; flex-direction:column; gap:2px; }
+  .pill-label { font-size:10px; color:var(--muted); }
+  .pill-val { font-family:'DM Serif Display',serif; font-size:22px; }
+  .footer { border-top:1px solid var(--border); padding:20px 48px; display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:40px; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  canvas { max-width:100%; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">Nivimivi · Brand Health Report</div>
+    <div class="brand-name">bewakoof</div>
+    <div class="header-meta">609 reviews · June 10, 2026 · Reddit + Play Store</div>
+  </div>
+  <div class="header-right">
+    <button class="ap-btn" onclick="toggleActionPlan()">
+      <span>⚡</span> Get Action Plan
+    </button>
+    <div class="health-wrap">
+      <div class="health-score">0.1</div>
+      <div class="health-label">Health Score / 10</div>
+    </div>
+  </div>
+</div>
+
+<!-- Delta row — shows only if yesterday cache exists -->
+
+
+<!-- Action Plan Panel -->
+<div class="ap-panel" id="apPanel">
+  <div class="ap-grid">
+    <div>
+      <div class="ap-section-label">Biggest Pain Right Now</div>
+      <div class="ap-urgency">HIGH URGENCY</div>
+      <div class="ap-pain-cat">Customer Support</div>
+      <div class="ap-pain-why">Customer support is failing to resolve issues, leading to widespread dissatisfaction.</div>
+      <div class="ap-pain-impact">If not fixed, customer trust will erode, resulting in lost sales and negative brand reputation.</div>
+    </div>
+    <div>
+      <div class="ap-section-label">Top 3 Actions This Week</div>
+      
+        <div class="ap-action">
+          <div class="ap-action-num">1</div>
+          <div class="ap-action-body">
+            <div class="ap-action-title">Implement a dedicated customer support team</div>
+            <div class="ap-action-detail">Hire and train a dedicated customer support team to handle inquiries and complaints effectively this week.</div>
+            <div class="ap-action-tags">
+              <span class="ap-tag" style="color:#ef4444;border-color:#ef444420;background:#ef444410">Effort: High</span>
+              <span class="ap-tag" style="color:#ef4444;border-color:#ef444420;background:#ef444410">Impact: High</span>
+            </div>
+          </div>
+        </div>
+        <div class="ap-action">
+          <div class="ap-action-num">2</div>
+          <div class="ap-action-body">
+            <div class="ap-action-title">Enhance the return and refund process</div>
+            <div class="ap-action-detail">Revamp the return and refund policy to ensure timely processing and clear communication to customers.</div>
+            <div class="ap-action-tags">
+              <span class="ap-tag" style="color:#f59e0b;border-color:#f59e0b20;background:#f59e0b10">Effort: Medium</span>
+              <span class="ap-tag" style="color:#ef4444;border-color:#ef444420;background:#ef444410">Impact: High</span>
+            </div>
+          </div>
+        </div>
+        <div class="ap-action">
+          <div class="ap-action-num">3</div>
+          <div class="ap-action-body">
+            <div class="ap-action-title">Improve order tracking and communication</div>
+            <div class="ap-action-detail">Upgrade the order tracking system to provide real-time updates and reduce vague communication about deliveries.</div>
+            <div class="ap-action-tags">
+              <span class="ap-tag" style="color:#f59e0b;border-color:#f59e0b20;background:#f59e0b10">Effort: Medium</span>
+              <span class="ap-tag" style="color:#f59e0b;border-color:#f59e0b20;background:#f59e0b10">Impact: Medium</span>
+            </div>
+          </div>
+        </div>
+    </div>
+    <div>
+      <div class="ap-section-label">Priority Reviews to Address</div>
+      
+        <div class="ap-pri-review">
+          <div class="ap-pri-cat">Customer Support</div>
+          <div class="ap-pri-text">"pathetic customer care, no solution for 2 orders"</div>
+          <div class="ap-pri-why">This highlights the critical failure in customer service that needs immediate attention.</div>
+        </div>
+        <div class="ap-pri-review">
+          <div class="ap-pri-cat">Delivery & Shipping</div>
+          <div class="ap-pri-text">"worst online shopping experience I’ve had"</div>
+          <div class="ap-pri-why">This reflects severe delivery issues that can deter future customers.</div>
+        </div>
+        <div class="ap-pri-review">
+          <div class="ap-pri-cat">Customer Support</div>
+          <div class="ap-pri-text">"no refund has been issued till date"</div>
+          <div class="ap-pri-why">Delayed refunds are damaging customer trust and satisfaction.</div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Body -->
+<div class="body">
+
+  <!-- Stat cards with delta -->
+  <div class="grid-4">
+    <div class="card stat-pos">
+      <div class="card-title">Positive</div>
+      <div class="card-value" style="color:var(--pos)">36%</div>
+      <div class="card-sub">222 reviews</div>
+      <div class="card-delta" style="color:#94a3b8"></div>
+    </div>
+    <div class="card stat-neg">
+      <div class="card-title">Negative</div>
+      <div class="card-value" style="color:var(--neg)">42%</div>
+      <div class="card-sub">258 reviews</div>
+      <div class="card-delta" style="color:#94a3b8"></div>
+    </div>
+    <div class="card stat-neu">
+      <div class="card-title">Neutral</div>
+      <div class="card-value" style="color:var(--neu)">15%</div>
+      <div class="card-sub">94 reviews</div>
+      <div class="card-delta" style="color:#94a3b8"></div>
+    </div>
+    <div class="card stat-mix">
+      <div class="card-title">Mixed</div>
+      <div class="card-value" style="color:var(--warn)">6%</div>
+      <div class="card-sub">35 reviews</div>
+      <div class="card-delta" style="color:#94a3b8"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="section-title">Category Breakdown</div>
+      <div id="cat-bars"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Sentiment Distribution</div>
+      <div class="donut-wrap">
+        <canvas id="donutChart" width="160" height="160"></canvas>
+        <div class="donut-legend" id="donut-legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px">
+    <div class="section-title">Category × Sentiment Heatmap</div>
+    <table class="heatmap-table" id="heatmap-table"></table>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px">
+    <div class="card">
+      <div class="section-title">Data Sources</div>
+      <div class="pill-row" id="src-pills"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Review Languages</div>
+      <div class="pill-row" id="lang-pills"></div>
+    </div>
+  </div>
+
+  <div class="section-title">Critical Review Feed</div>
+  <div class="review-filters" id="review-filters"></div>
+  <div class="review-grid" id="review-grid"></div>
+
+</div>
+
+<div class="footer">
+  <span>Confidential — bewakoof Brand Health Report</span>
+  <span>Generated by Nivimivi · June 10, 2026</span>
+</div>
+
+<script>
+const CAT_ITEMS = [{"cat": "Product Quality", "count": 136, "pct": 22}, {"cat": "User Experience", "count": 117, "pct": 19}, {"cat": "Customer Support", "count": 107, "pct": 18}, {"cat": "App Experience", "count": 84, "pct": 14}, {"cat": "Delivery & Shipping", "count": 50, "pct": 8}, {"cat": "Pricing & Value", "count": 50, "pct": 8}, {"cat": "Brand Image", "count": 38, "pct": 6}, {"cat": "Size & Fit", "count": 25, "pct": 4}, {"cat": "Fake Reviews", "count": 1, "pct": 0}, {"cat": "null", "count": 1, "pct": 0}];
+const SENT_DATA = [{"label": "Positive", "value": 222, "color": "#22c55e"}, {"label": "Negative", "value": 258, "color": "#ef4444"}, {"label": "Neutral", "value": 94, "color": "#94a3b8"}, {"label": "Mixed", "value": 35, "color": "#f59e0b"}];
+const SRC_DATA  = [{"label": "PlayStore", "value": 459}, {"label": "Reddit", "value": 150}];
+const LANG_DATA = [{"label": "English", "value": 510}, {"label": "Hindi", "value": 51}, {"label": "Hinglish", "value": 46}, {"label": "French", "value": 2}];
+const REVIEWS   = [{"category": "Product Quality", "sentiment": "Negative", "source": "Reddit", "text": "Is this print supposed to be like this?? I ordered this t shirt from bewakoof and it's print was not like as in the picture provided so I thought it was defective and ordered for an exchange......today the exchanged product came and it is also in the similar condition.....is it supposed to be like t", "evidence": "it's print was not like as in the picture", "language": "English", "date": "2026-03-27"}, {"category": "Product Quality", "sentiment": "Mixed", "source": "PlayStore", "text": "The clothes are cool the prints are great using this website from many years the cloth quality can be improved a bit some products are not that great", "evidence": "cloth quality can be improved a bit", "language": "English", "date": "2026-05-27"}, {"category": "Product Quality", "sentiment": "Negative", "source": "PlayStore", "text": "worst experience how can a company send a used item \ud83d\udc4e", "evidence": "send a used item", "language": "English", "date": "2026-05-20"}, {"category": "User Experience", "sentiment": "Negative", "source": "Reddit", "text": "Nahi jaan ni bhai CGL ki HARSH REALITY \ud83d\ude4f\ud83c\udffb 3 din ho gye jahan dekho wahi corporate vs cgl wali baat \ud83e\udd23\n\nArey bhai ek baar exam centre pe jaake dekh lo SSC ka crowd kaisa h , unme se 99% ( conservative estimate) ko 30 LPA koi nhi de rha \ud83d\ude02. \n\nUPSC, CAT wala koi backup ke liye CGL  de rha h or  uska comp", "evidence": "CGL ki HARSH REALITY", "language": "Hinglish", "date": "2026-06-08"}, {"category": "User Experience", "sentiment": "Mixed", "source": "Reddit", "text": "\u092b\u0915 Uber Pata hai aaj kya hua (a repost, mods removed last one, I wanna know what to do now)\n\nI was getting late for uni so instead of waiting for bus (travel time: 1.5 hour), I opened all the ride booking apps and compared their prices and Uber was the cheapest, so I opened Uber thinking I would boo", "evidence": "I was getting late for uni", "language": "Hinglish", "date": "2026-06-03"}, {"category": "User Experience", "sentiment": "Negative", "source": "Reddit", "text": "The National Museum is LYING to you. How India\u2019s Buddhist history is being systematically whitewashed in plain sight. I just visited the National Museum in New Delhi, and honestly, I am absolutely furious.\n\nWe are taught to blindly trust museum placards as absolute, objective historical truth. But i", "evidence": "I am absolutely furious", "language": "English", "date": "2026-05-19"}, {"category": "Customer Support", "sentiment": "Negative", "source": "Reddit", "text": "JEEtards literally be fighting over anything rather than studying\ud83d\ude2d\ud83e\udd40", "evidence": "No respect of privacy, then hit me.", "language": "English", "date": "2026-04-30"}, {"category": "Customer Support", "sentiment": "Negative", "source": "Reddit", "text": "You could have literally showed him the screen. I have done this multiple times. And they angrily look at me. But I ask them do you want payment or not? If yes show the QR or I'll walk away. Do what you want to do. \nOf course if it is \u20b997 I do pay them \u20b9100. \nBut this was outright f#\u20acked up. Also yo", "evidence": "But this was outright f#\u20acked up.", "language": "English", "date": "2026-06-03"}, {"category": "Customer Support", "sentiment": "Mixed", "source": "Reddit", "text": "Yaar aapne Galti krdi \nUber company aapko 97 pay krne bolti h as a discounted price aur baaki ke bache paise 213-97 Woh auto wale m Khud se daal deti h agli baar Koi aisa scene ho toh Bata Dena yeah baat aur haan  first time thora shy lageg Lekin fir aap bolna start kr doge yeah Uber wale se mere sa", "evidence": "They either refund me the entire fare", "language": "English", "date": "2026-06-03"}, {"category": "App Experience", "sentiment": "Mixed", "source": "Reddit", "text": "F*\u00a2k Uber Pata hai aaj kya hua,\n\nI was getting late for uni so instead of waiting for bus (travel time: 1.5 hour), I opened all the ride booking apps and compared their prices and Uber was the cheapest, so I opened Uber thinking I would book a bike cuz it's the cheapest option, and after adding my d", "evidence": "options of vehicle shown with fare were kind of weird", "language": "Hinglish", "date": "2026-06-03"}, {"category": "App Experience", "sentiment": "Negative", "source": "Reddit", "text": "stupid! or is it slow?", "evidence": "stupid! or is it slow?", "language": "English", "date": "2026-05-25"}, {"category": "App Experience", "sentiment": "Negative", "source": "Reddit", "text": "How uber felt after giving 0.20 for inconvenience\n\n![gif](giphy|GNTyzRYCOTepzYzalM)", "evidence": "they have the right to increase the rate", "language": "English", "date": "2026-06-03"}, {"category": "Delivery & Shipping", "sentiment": "Negative", "source": "Reddit", "text": "Travel time 1.5hrs for 6kms !?", "evidence": "Travel time 1.5hrs for 6kms !?", "language": "English", "date": "2026-06-03"}, {"category": "Delivery & Shipping", "sentiment": "Negative", "source": "PlayStore", "text": "worst worst worst worst , don't buy anything from this platform, they worst in terms of service and delivery, its been 8daya I am waiting for my delivery , just 1 small miss call from delivery partner cant call them back and same time WhatsApp message will pop up your unavailable, what kind of servi", "evidence": "worst in terms of service and delivery", "language": "English", "date": "2026-06-07"}, {"category": "Delivery & Shipping", "sentiment": "Negative", "source": "PlayStore", "text": "delivery is so late, even now i have not got my order i have paid online \ud83d\ude11", "evidence": "delivery is so late", "language": "English", "date": "2026-06-05"}, {"category": "Pricing & Value", "sentiment": "Negative", "source": "Reddit", "text": "Indian Parents are stupid So on our dinner table,they were talking about how her friend always touches the feet of her father and my father said...karna hi chhie while looking at me,dude first of all they are narcisstic every achievement of mine are theirs and every failure is mine,I don't get to go", "evidence": "Price thoda zyada laga.", "language": "Hindi", "date": "2026-06-07"}, {"category": "Pricing & Value", "sentiment": "Mixed", "source": "Reddit", "text": "Tired of fast-fashion brands charging \u20b9699 for basic clogs? I found the exact same manufacturer and launched my own startup to sell them for \u20b9299. Genuinely need your help. Hey Reddit community,\n\nMain kafi time se online products ki sourcing aur manufacturing cost par research kar raha hu, aur haal ", "evidence": "Maine Bewakoof par ek Clogs dekha jiska price \u20b9699.", "language": "Hindi", "date": "2026-06-04"}, {"category": "Pricing & Value", "sentiment": "Negative", "source": "Reddit", "text": "Amazon| \u2600\ufe0f Vacation Wear Fest | Summer Style Refresh Amazon| \u2600\ufe0f Vacation Wear Fest | Summer Style Refresh  \n  \n\ud83d\udc55 T-Shirts, Jeans & More  \n\u26a1\ufe0f 50\u201370% Off + Extra 5% Off  \n\ud83d\udc49\ud83c\udffb [https://amzn-to.co/3kmbm1](https://amzn-to.co/3kmbm1)  \n  \n\u2728 Trendy T-Shirts  \n\u26a1\ufe0f Wrong, London Hills & More  \n\ud83d\udc49\ud83c\udffb [https://amzn", "evidence": "Paying \u20b9699 for basic clogs.", "language": "Hindi", "date": "2026-06-04"}];
+const HEATMAP   = [{"cat": "Product Quality", "Positive": 69, "Negative": 20, "Neutral": 5, "Mixed": 6}, {"cat": "User Experience", "Positive": 18, "Negative": 21, "Neutral": 57, "Mixed": 4}, {"cat": "Customer Support", "Positive": 7, "Negative": 88, "Neutral": 2, "Mixed": 3}, {"cat": "App Experience", "Positive": 46, "Negative": 42, "Neutral": 5, "Mixed": 7}, {"cat": "Delivery & Shipping", "Positive": 4, "Negative": 88, "Neutral": 2, "Mixed": 6}, {"cat": "Pricing & Value", "Positive": 50, "Negative": 32, "Neutral": 6, "Mixed": 12}, {"cat": "Brand Image", "Positive": 68, "Negative": 24, "Neutral": 5, "Mixed": 3}, {"cat": "Size & Fit", "Positive": 28, "Negative": 32, "Neutral": 28, "Mixed": 12}, {"cat": "Fake Reviews", "Positive": 0, "Negative": 100, "Neutral": 0, "Mixed": 0}, {"cat": "null", "Positive": 0, "Negative": 0, "Neutral": 100, "Mixed": 0}];
+const TOTAL     = 609;
+
+function toggleActionPlan() {
+  const panel = document.getElementById('apPanel');
+  const btn   = document.querySelector('.ap-btn');
+  panel.classList.toggle('open');
+  btn.innerHTML = panel.classList.contains('open')
+    ? '<span>✕</span> Close Action Plan'
+    : '<span>⚡</span> Get Action Plan';
+}
+
+const barsEl = document.getElementById('cat-bars');
+const maxCat = CAT_ITEMS[0]?.count || 1;
+CAT_ITEMS.forEach(d => {
+  barsEl.innerHTML += `<div class="cat-row">
+    <div class="cat-label" title="${d.cat}">${d.cat}</div>
+    <div class="cat-track"><div class="cat-bar" style="width:${Math.round(d.count/maxCat*100)}%"></div></div>
+    <div class="cat-count">${d.count}</div>
+  </div>`;
+});
+
+(function() {
+  const canvas = document.getElementById('donutChart');
+  const ctx = canvas.getContext('2d');
+  const cx = 80, cy = 80, r = 60, ir = 38;
+  const total = SENT_DATA.reduce((a,b) => a + b.value, 0);
+  let angle = -Math.PI / 2;
+  SENT_DATA.forEach(d => {
+    const slice = (d.value / total) * 2 * Math.PI;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, angle, angle + slice);
+    ctx.closePath(); ctx.fillStyle = d.color; ctx.fill();
+    angle += slice;
+  });
+  ctx.beginPath(); ctx.arc(cx, cy, ir, 0, 2*Math.PI);
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+  ctx.font = 'bold 18px serif'; ctx.fillStyle = '#1a1814';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(total, cx, cy);
+  const legend = document.getElementById('donut-legend');
+  SENT_DATA.forEach(d => {
+    legend.innerHTML += `<div class="legend-item">
+      <div class="legend-dot" style="background:${d.color}"></div>
+      <span>${d.label}</span>
+      <span class="legend-val">${Math.round(d.value/total*100)}%</span>
+    </div>`;
+  });
+})();
+
+(function() {
+  const table = document.getElementById('heatmap-table');
+  const sents = ['Positive','Negative','Neutral','Mixed'];
+  const colors = {
+    Positive: ['#f0fdf4','#dcfce7','#bbf7d0','#86efac','#4ade80'],
+    Negative: ['#fff5f5','#fee2e2','#fecaca','#fca5a5','#f87171'],
+    Neutral:  ['#f8fafc','#f1f5f9','#e2e8f0','#cbd5e1','#94a3b8'],
+    Mixed:    ['#fffbeb','#fef3c7','#fde68a','#fcd34d','#fbbf24'],
+  };
+  let html = '<tr><th style="text-align:left">Category</th>';
+  sents.forEach(s => html += `<th>${s}</th>`);
+  html += '</tr>';
+  HEATMAP.forEach(row => {
+    html += `<tr><td class="cat-td">${row.cat}</td>`;
+    sents.forEach(s => {
+      const v = row[s] || 0;
+      const idx = Math.min(4, Math.floor(v/25));
+      const bg = colors[s][idx];
+      html += `<td>${v > 0 ? `<span class="hm-cell" style="background:${bg}">${v}%</span>` : ''}</td>`;
+    });
+    html += '</tr>';
+  });
+  table.innerHTML = html;
+})();
+
+SRC_DATA.forEach(d => {
+  document.getElementById('src-pills').innerHTML += `<div class="pill"><div class="pill-label">${d.label}</div><div class="pill-val">${d.value}</div></div>`;
+});
+LANG_DATA.forEach(d => {
+  document.getElementById('lang-pills').innerHTML += `<div class="pill"><div class="pill-label">${d.label}</div><div class="pill-val">${d.value}</div></div>`;
+});
+
+const cats = ['All', ...new Set(REVIEWS.map(r => r.category))];
+const filters = document.getElementById('review-filters');
+const grid = document.getElementById('review-grid');
+cats.forEach((cat, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'filter-btn' + (i === 0 ? ' active' : '');
+  btn.textContent = cat;
+  btn.onclick = () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.review-card').forEach(card => {
+      card.classList.toggle('hidden', cat !== 'All' && card.dataset.cat !== cat);
+    });
+  };
+  filters.appendChild(btn);
+});
+REVIEWS.forEach(r => {
+  grid.innerHTML += `<div class="review-card" data-cat="${r.category}">
+    <div class="review-header">
+      <div class="review-cat">${r.category}</div>
+      <div class="review-source">${r.source}</div>
+    </div>
+    <div class="review-text">${r.text}</div>
+    ${r.evidence ? `<div class="review-evidence">"${r.evidence}"</div>` : ''}
+    <div class="review-meta">
+      <span class="sent-badge sent-${r.sentiment}">${r.sentiment}</span>
+      ${r.language !== 'English' ? `<span class="lang-badge">${r.language}</span>` : ''}
+      <span style="font-size:10px;color:var(--muted);margin-left:auto">${r.date}</span>
+    </div>
+  </div>`;
+});
+</script>
+</body>
+</html>
